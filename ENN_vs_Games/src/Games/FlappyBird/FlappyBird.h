@@ -57,6 +57,7 @@ private:
 	float max_vel;
 	float gravity;
 	bool all_dead;
+	bool perfect_score;
 
 	sf::Font font;
 	sf::Text gen_text;

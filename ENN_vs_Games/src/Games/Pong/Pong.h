@@ -53,6 +53,8 @@ private:
 	float ball_r;
 	float ball_speed;
 
+	bool perfect_score;
+
 	sf::Font font;
 	sf::Text generation_text;
 	sf::Text score_text;

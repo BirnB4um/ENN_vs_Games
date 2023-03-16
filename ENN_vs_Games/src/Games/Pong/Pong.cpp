@@ -9,7 +9,7 @@ Pong::~Pong() {
 }
 
 void Pong::init() {
-	srand(1);
+	srand(666);
 
 	//window 500, 800
 	paused = true;
@@ -19,6 +19,8 @@ void Pong::init() {
 	step = epoche_length;
 	epoche = 0;
 	number_of_agents = 200;
+
+	perfect_score = false;
 
 	for (int i = 0; i < number_of_agents; i++) {
 		Agent agent;
@@ -31,12 +33,12 @@ void Pong::init() {
 	paddle_w = Data::window_width / 20;
 	paddle_h = Data::window_height / 4;
 	rect.setSize(sf::Vector2f(paddle_w, paddle_h));
-	rect.setFillColor(sf::Color(255, 255, 255, 20));
+	rect.setFillColor(sf::Color(255, 255, 255, 100));
 
 	ball_speed = 8;
 	ball_r = Data::window_height / 100;
 	ball.setRadius(ball_r);
-	ball.setFillColor(sf::Color(255, 255, 255, 20));
+	ball.setFillColor(sf::Color(255, 255, 255, 100));
 	ball.setOrigin(ball_r, ball_r);
 
 	font.loadFromFile("res/arial.ttf");
@@ -97,6 +99,10 @@ void Pong::update() {
 			agents[agents_list[i]].nn.mutate(1 + rand() % max_mutations, agents[agents_list[agents_list.size() - 1 - (rand() % int(agents.size() / 2))]].nn.building_code);
 		}
 
+		if (agents[agents_list[agents.size() - 1]].score == 3000) {
+			perfect_score = true;
+		}
+
 		std::cout << "score: " << agents[agents_list[agents.size() - 1]].score << "\nnodes: " << agents[agents_list[agents.size() - 1]].nn.number_of_hidden_nodes << "\nconnections: " << agents[agents_list[agents.size() - 1]].nn.number_of_connections << "\n";
 
 		//restart epoche
@@ -120,6 +126,9 @@ void Pong::update() {
 
 	//step
 	int m = sf::Keyboard::isKeyPressed(sf::Keyboard::S) ? epoche_length : 1;
+	if (perfect_score) {
+		m = sf::Keyboard::isKeyPressed(sf::Keyboard::P) ? epoche_length : 1;
+	}
 	for (int n = 0; n < m;n++) {
 		for (Agent& agent : agents) {
 

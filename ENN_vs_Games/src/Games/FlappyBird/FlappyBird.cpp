@@ -9,6 +9,7 @@ FlappyBird::~FlappyBird() {
 }
 
 void FlappyBird::init() {
+	srand(333);
 
 	//window 500, 800
 
@@ -21,6 +22,7 @@ void FlappyBird::init() {
 
 	for (int i = 0; i < number_of_agents; i++) {
 		Agent agent;
+		agent.score = 0;
 		agent.nn.init(4, 1);
 		agents.push_back(agent);
 		agents_list.push_back(i);
@@ -37,6 +39,7 @@ void FlappyBird::init() {
 	pipe_speed = 4;
 	pipe_space = bird_height + flapp_vel * 8;
 	all_dead = false;
+	perfect_score = false;
 
 	upper_pipe.setPosition(-1,0);
 	upper_pipe.setSize(sf::Vector2f(pipe_width, 100));
@@ -103,7 +106,9 @@ void FlappyBird::update() {
 		for (int i = 0; i < agents_list.size() / 2; i++) {
 			agents[agents_list[i]].nn.mutate(1 + rand() % max_mutations, agents[agents_list[agents_list.size() - 1 - (rand() % int(agents.size() / 2))]].nn.building_code);
 		}
-
+		if (agents[agents_list[agents.size() - 1]].score == 10000) {
+			perfect_score = true;
+		}
 		std::cout << "score: " << agents[agents_list[agents.size() - 1]].score << "\nnodes: " << agents[agents_list[agents.size() - 1]].nn.number_of_hidden_nodes << "\nconnections: " << agents[agents_list[agents.size() - 1]].nn.number_of_connections << "\n";
 		//if (agents[agents_list[agents.size() - 1]].nn.number_of_connections == 2 &&
 		//	agents[agents_list[agents.size() - 1]].nn.number_of_hidden_nodes == 0) {
@@ -130,6 +135,9 @@ void FlappyBird::update() {
 	//step
 	all_dead = true;
 	int m = sf::Keyboard::isKeyPressed(sf::Keyboard::S) ? epoche_length : 1;
+	if (perfect_score) {
+		m = 1;
+	}
 	for (int n = 0; n < m;n++) {
 		for (Agent& agent : agents) {
 

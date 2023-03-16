@@ -155,242 +155,132 @@ void Tron::simulation_step() {
 				Agent& agent = agents[board.agents[i]];
 
 				//// ===== set input =====
-				float dist;
+				float dist, min_dist=1;
+				bool changed_dir = false;
 				int d, dx, dy;
 
-				if (false) {
-					////dist UP
-					dist = 0;
-					d = agent.pos_y - 1;
-					while (board.board[agent.pos_x + d * board_width] == 0) {
-						dist++;
-						d--;
-					}
-					agent.nn.set_input(0, dist / board_width);
+				//dist FORWARD
+				dist = 0;
+				dx = agent.pos_x + agent.dx;
+				dy = agent.pos_y + agent.dy;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx += agent.dx;
+					dy += agent.dy;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				//agent.nn.set_input(0, dist / board_width);
 
-					////dist DOWN
-					dist = 0;
-					d = agent.pos_y + 1;
-					while (board.board[agent.pos_x + d * board_width] == 0) {
-						dist++;
-						d++;
-					}
-					agent.nn.set_input(1, dist / board_width);
+				//dist LEFT
+				dist = 0;
+				dx = agent.pos_x + agent.dy;
+				dy = agent.pos_y - agent.dx;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx += agent.dy;
+					dy += -agent.dx;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				agent.nn.set_input(1, dist / board_width);
 
-					////dist LEFT
-					dist = 0;
-					d = agent.pos_x - 1;
-					while (board.board[d + agent.pos_y * board_width] == 0) {
-						dist++;
-						d--;
-					}
-					agent.nn.set_input(2, dist / board_width);
+				//dist RIGHT
+				dist = 0;
+				dx = agent.pos_x - agent.dy;
+				dy = agent.pos_y + agent.dx;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx += -agent.dy;
+					dy += agent.dx;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				agent.nn.set_input(2, dist / board_width);
 
-					////dist RIGHT
-					dist = 0;
-					d = agent.pos_x + 1;
-					while (board.board[d + agent.pos_y * board_width] == 0) {
-						dist++;
-						d++;
-					}
-					agent.nn.set_input(3, dist / board_width);
+				//dist LEFT FORWARD
+				dist = 0;
+				dx = agent.pos_x + agent.dy + agent.dx;
+				dy = agent.pos_y + agent.dy - agent.dx;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx += agent.dy + agent.dx;
+					dy += agent.dy - agent.dx;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				//agent.nn.set_input(3, dist / board_width);
 
-					////dist DIAG UP-LEFT
-					dist = 0;
-					dx = agent.pos_x - 1;
-					dy = agent.pos_y - 1;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx--;
-						dy--;
-					}
-					agent.nn.set_input(4, dist / board_width);
+				//dist RIGHT FORWARD
+				dist = 0;
+				dx = agent.pos_x + agent.dx - agent.dy;
+				dy = agent.pos_y + agent.dx + agent.dy;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx += agent.dx - agent.dy;
+					dy += agent.dx + agent.dy;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				//agent.nn.set_input(4, dist / board_width);
 
-					////dist DIAG UP-RIGHT
-					dist = 0;
-					dx = agent.pos_x + 1;
-					dy = agent.pos_y - 1;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx++;
-						dy--;
-					}
-					agent.nn.set_input(5, dist / board_width);
+				//dist LEFT BACK
+				dist = 0;
+				dx = agent.pos_x + agent.dy - agent.dx;
+				dy = agent.pos_y - agent.dx - agent.dy;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx+= agent.dy - agent.dx;
+					dy+= -agent.dx - agent.dy;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				//agent.nn.set_input(5, dist / board_width);
 
-					////dist DIAG DOWN-LEFT
-					dist = 0;
-					dx = agent.pos_x - 1;
-					dy = agent.pos_y + 1;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx--;
-						dy++;
-					}
-					agent.nn.set_input(6, dist / board_width);
+				//dist RIGHT BACK
+				dist = 0;
+				dx = agent.pos_x -agent.dy - agent.dx;
+				dy = agent.pos_y + agent.dx - agent.dy;
+				while (board.board[dx + dy * board_width] == 0) {
+					dist++;
+					dx+= -agent.dy - agent.dx;
+					dy+= agent.dx - agent.dy;
+				}
+				if (dist < min_dist)
+					min_dist = dist;
+				//agent.nn.set_input(6, dist / board_width);
 
-					////dist DIAG DOWN-RIGHT
-					dist = 0;
-					dx = agent.pos_x + 1;
-					dy = agent.pos_y + 1;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx++;
-						dy++;
-					}
-					agent.nn.set_input(7, dist / board_width);
 
-					////coords on board
-					////agent.nn.set_input(8, float(agent.pos_x) / board_width);
-					////agent.nn.set_input(9, float(agent.pos_y) / board_height);
-					 
+				//time
+				//agent.nn.set_input(7, (step / 100.0f) - int(step / 100.0f));
+
+				//coords on board
+				//agent.nn.set_input(8, float(agent.pos_x) / board_width);
+				//agent.nn.set_input(9, float(agent.pos_y) / board_height);
 					
-					//// ===== run ENN =====
-					agent.nn.forward();
 
-					//// ===== execute output =====
-					float highest = 0;
 
-					if (agent.nn.get_output(0) > highest && agent.nn.get_output(0) > trigger_value) {
-						highest = agent.nn.get_output(0);
-						agent.dx = 1;
-						agent.dy = 0;
-					}
-					if (agent.nn.get_output(1) > highest && agent.nn.get_output(1) > trigger_value) {
-						highest = agent.nn.get_output(1);
-						agent.dx = -1;
-						agent.dy = 0;
-					}
-					if (agent.nn.get_output(2) > highest && agent.nn.get_output(2) > trigger_value) {
-						highest = agent.nn.get_output(2);
-						agent.dx = 0;
-						agent.dy = 1;
-					}
-					if (agent.nn.get_output(3) > highest && agent.nn.get_output(3) > trigger_value) {
-						highest = agent.nn.get_output(3);
-						agent.dx = 0;
-						agent.dy = -1;
-					}
+				// ===== run ENN =====
+				agent.nn.forward();
+
+				// ===== execute output =====
+				float highest = trigger_value;
+
+				if (agent.nn.get_output(0) > highest) {//left
+					highest = agent.nn.get_output(0);
+					int x = agent.dx;
+					agent.dx = agent.dy;
+					agent.dy = -x;
+					changed_dir = true;
+				}
+				if (agent.nn.get_output(1) > highest) {//right
+					highest = agent.nn.get_output(1);
+					int x = agent.dx;
+					agent.dx = -agent.dy;
+					agent.dy = x;
+					changed_dir = true;
+				}
 				
-				}
-				else {
-
-					// ===== set input =====
-
-					//dist FORWARD
-					dist = 0;
-					dx = agent.pos_x + agent.dx;
-					dy = agent.pos_y + agent.dy;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx += agent.dx;
-						dy += agent.dy;
-					}
-					//agent.nn.set_input(0, dist / board_width);
-
-					//dist LEFT
-					dist = 0;
-					dx = agent.pos_x + agent.dy;
-					dy = agent.pos_y - agent.dx;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx += agent.dy;
-						dy += -agent.dx;
-					}
-					agent.nn.set_input(1, dist / board_width);
-
-					//dist RIGHT
-					dist = 0;
-					dx = agent.pos_x - agent.dy;
-					dy = agent.pos_y + agent.dx;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx += -agent.dy;
-						dy += agent.dx;
-					}
-					agent.nn.set_input(2, dist / board_width);
-
-					//dist LEFT FORWARD
-					dist = 0;
-					dx = agent.pos_x + agent.dy + agent.dx;
-					dy = agent.pos_y + agent.dy - agent.dx;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx += agent.dy + agent.dx;
-						dy += agent.dy - agent.dx;
-					}
-					//agent.nn.set_input(3, dist / board_width);
-
-					//dist RIGHT FORWARD
-					dist = 0;
-					dx = agent.pos_x + agent.dx - agent.dy;
-					dy = agent.pos_y + agent.dx + agent.dy;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx += agent.dx - agent.dy;
-						dy += agent.dx + agent.dy;
-					}
-					//agent.nn.set_input(4, dist / board_width);
-
-					//dist LEFT BACK
-					dist = 0;
-					dx = agent.pos_x + agent.dy - agent.dx;
-					dy = agent.pos_y - agent.dx - agent.dy;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx+= agent.dy - agent.dx;
-						dy+= -agent.dx - agent.dy;
-					}
-					//agent.nn.set_input(5, dist / board_width);
-
-					//dist RIGHT BACK
-					dist = 0;
-					dx = agent.pos_x -agent.dy - agent.dx;
-					dy = agent.pos_y + agent.dx - agent.dy;
-					while (board.board[dx + dy * board_width] == 0) {
-						dist++;
-						dx+= -agent.dy - agent.dx;
-						dy+= agent.dx - agent.dy;
-					}
-					//agent.nn.set_input(6, dist / board_width);
-
-					//time
-					//agent.nn.set_input(7, (step / 100.0f) - int(step / 100.0f));
-
-					//coords on board
-					//agent.nn.set_input(8, float(agent.pos_x) / board_width);
-					//agent.nn.set_input(9, float(agent.pos_y) / board_height);
-					
-
-
-					// ===== run ENN =====
-					agent.nn.forward();
-
-					// ===== execute output =====
-					float highest = trigger_value;
-
-					//if (agent.nn.get_output(0) > highest && agent.nn.get_output(0) > trigger_value) {//forward
-					//	highest = agent.nn.get_output(0);
-					//	agent.dx = agent.dx;
-					//	agent.dy = agent.dy;
-					//}
-					if (agent.nn.get_output(0) > highest) {//left
-						highest = agent.nn.get_output(0);
-						int x = agent.dx;
-						agent.dx = agent.dy;
-						agent.dy = -x;
-					}
-					if (agent.nn.get_output(1) > highest) {//right
-						highest = agent.nn.get_output(1);
-						int x = agent.dx;
-						agent.dx = -agent.dy;
-						agent.dy = x;
-					}
-					//if (agent.nn.get_output(3) > highest && agent.nn.get_output(3) > trigger_value) {//back
-					//	highest = agent.nn.get_output(3);
-					//	agent.dx = 0;
-					//	agent.dy = -1;
-					//}
-				}
 
 
 				if (board.board[agent.pos_x + agent.dx + (agent.pos_y + agent.dy) * board_width] != 0) {//died
@@ -412,6 +302,12 @@ void Tron::simulation_step() {
 					board.board[agent.pos_x + agent.pos_y * board_width] = agent.color;
 					
 					agent.score++;
+					//if (min_dist > 3.0/board_width) {
+					//	agent.score += 10;
+					//}
+					//if (changed_dir) {
+					//	agent.score += 10;
+					//}
 				}
 
 			}
