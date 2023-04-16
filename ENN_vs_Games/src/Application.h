@@ -21,7 +21,10 @@ private:
 	sf::RenderWindow window;
 	sf::Event sf_event;
 
+	//choose which game to play
 	Tron scene;
+	//FlappyBird scene;
+	//Pong scene;
 
 	void on_resize();
 	void handle_event();

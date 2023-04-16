@@ -9,6 +9,8 @@ FlappyBird::~FlappyBird() {
 }
 
 void FlappyBird::init() {
+	std::cin.get();
+
 	srand(333);
 
 	//window 500, 800

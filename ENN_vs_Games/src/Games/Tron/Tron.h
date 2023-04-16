@@ -2,6 +2,7 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <fstream>
 #include "../../Data.h"
 #include "../../EvolutionaryNeuralNetwork.h"
 
@@ -58,6 +59,8 @@ private:
 
 	std::vector<Board> boards;
 
+	int min_steps;
+	int died_punishment;
 	int kill_bonus;
 	int board_width, board_height;
 	int best_board;

@@ -12,19 +12,21 @@ void Tron::init() {
 	srand(666);//69 666
 
 	trigger_value = 0.7;
-	max_mutations = 20;
+	max_mutations = 10;
 	epoche = 0;
-	number_of_agents_pro_board = 10;//
-	number_of_boards = 50;
+	number_of_agents_pro_board = 2;//
+	number_of_boards = 200;
 	number_of_agents = number_of_agents_pro_board * number_of_boards;
 	optimise_ever_n_epoches = 50;
 
-	kill_bonus = 0;
-	board_width = 100;
-	board_height = 100;
+	died_punishment = 1000;
+	kill_bonus = 1000;
+	board_width = 60;
+	board_height = 60;
 	best_board = 0;
-	epoche_length = board_width * board_height;
+	epoche_length = 1000;// board_width* board_height;
 	step = epoche_length;
+
 
 	empty_board = new unsigned int[board_width * board_height];
 	for (int y = 0; y < board_height;y++) {
@@ -50,7 +52,7 @@ void Tron::init() {
 			agent.score = 0;
 			agent.nn.min_weight = -2;
 			agent.nn.max_weight = 2;
-			agent.nn.init(7, 2);
+			agent.nn.init(9, 2);
 			agents.push_back(agent);
 			agents_list.push_back(i * number_of_agents_pro_board + n);
 			board.agents[n] = i * number_of_agents_pro_board + n;
@@ -144,14 +146,19 @@ void Tron::restart_epoche() {
 void Tron::simulation_step() {
 
 	bool all_dead = true;
+	bool all_best_dead = true;
 
+	int b = -1;
 	for (Board &board : boards) {
+		b++;
 
 		for (int i = 0; i < number_of_agents_pro_board; i++) {
 
 			if (!agents[board.agents[i]].died) {
 				all_dead = false;
-
+				if (b == best_board) {
+					all_best_dead = false;
+				}
 				Agent& agent = agents[board.agents[i]];
 
 				//// ===== set input =====
@@ -235,7 +242,7 @@ void Tron::simulation_step() {
 				}
 				if (dist < min_dist)
 					min_dist = dist;
-				//agent.nn.set_input(5, dist / board_width);
+				agent.nn.set_input(5, dist / board_width);
 
 				//dist RIGHT BACK
 				dist = 0;
@@ -248,7 +255,37 @@ void Tron::simulation_step() {
 				}
 				if (dist < min_dist)
 					min_dist = dist;
-				//agent.nn.set_input(6, dist / board_width);
+				agent.nn.set_input(6, dist / board_width);
+
+				//position of enemy
+				agent.nn.set_input(7, 0);
+				agent.nn.set_input(8, 0);
+				for (int n = 0; n < number_of_agents_pro_board; n++) {
+					if (n != i) {
+						int d_x = agents[board.agents[n]].pos_x - agent.pos_x;
+						int d_y = agents[board.agents[n]].pos_y - agent.pos_y;
+
+						//horizontal position of enemy (relative to agent)
+						if (agent.dx == 0) {
+							dist = agent.dy < 0 ? d_x : -d_x;
+						}
+						else {
+							dist = agent.dx < 0 ? -d_y : d_y;
+						}
+						agent.nn.set_input(7, dist / board_width);
+
+
+						//vertical position of enemy (relative to agent)
+						if (agent.dx == 0) {
+							dist = agent.dy < 0 ? -d_y : d_y;
+						}
+						else {
+							dist = agent.dx < 0 ? -d_x : d_x;
+						}
+						agent.nn.set_input(8, dist / board_width);
+					}
+				}
+
 
 
 				//time
@@ -285,12 +322,13 @@ void Tron::simulation_step() {
 
 				if (board.board[agent.pos_x + agent.dx + (agent.pos_y + agent.dy) * board_width] != 0) {//died
 					agent.died = true;
+					agent.score -= died_punishment;
 					board.board[agent.pos_x + agent.pos_y * board_width] = agent.trail_color;
 					
 					//give boost to others
 					for (int n = 0; n < number_of_agents_pro_board; n++) {
 						if (n != i) {
-							agents[board.agents[n]].score += kill_bonus;
+							agents[board.agents[n]].score += kill_bonus * (epoche_length-step)/epoche_length;
 						}
 					}
 
@@ -302,6 +340,7 @@ void Tron::simulation_step() {
 					board.board[agent.pos_x + agent.pos_y * board_width] = agent.color;
 					
 					agent.score++;
+
 					//if (min_dist > 3.0/board_width) {
 					//	agent.score += 10;
 					//}
@@ -319,6 +358,9 @@ void Tron::simulation_step() {
 	if (all_dead) {
 		step = epoche_length;
 	}
+	if (all_best_dead) {
+		min_steps = epoche_length;
+	}
 
 }
 
@@ -329,7 +371,18 @@ void Tron::update() {
 		for (Agent &agent : agents) {
 			//agent.score -= 1 * agent.nn.number_of_hidden_nodes;
 			//agent.score -= 1 * agent.nn.number_of_connections;
+
 		}
+
+		//if (epoche == 427) {
+		//	std::cout << "\ncol: " << agents[boards[best_board].agents[6]].color;
+		//	agents[boards[best_board].agents[6]].nn.print();
+		//	agents[boards[best_board].agents[6]].nn.optimise_network();
+		//	agents[boards[best_board].agents[6]].nn.optimise_building_code();
+		//	auto myfile = std::fstream("muster_nn.dat", std::ios::out | std::ios::binary);
+		//	myfile.write((char*)&(agents[boards[best_board].agents[6]].nn.building_code[0]), agents[boards[best_board].agents[6]].nn.building_code.size() * sizeof(float));
+		//	myfile.close();
+		//}
 
 		sort();
 
@@ -352,6 +405,7 @@ void Tron::update() {
 
 		restart_epoche();
 
+		min_steps = 1;
 		step = 0;
 		epoche++;
 		std::cout << " === Epoche: " << epoche << " ===" << std::endl;
@@ -359,7 +413,43 @@ void Tron::update() {
 
 
 	//step
-	int m = sf::Keyboard::isKeyPressed(sf::Keyboard::S) ? epoche_length : 1;
+	int m = sf::Keyboard::isKeyPressed(sf::Keyboard::S) ? epoche_length : min_steps;
+	//if (min_steps == 1 && (
+	//	epoche == 31 ||
+	//	epoche == 136 ||
+	//	epoche == 183 ||
+	//	epoche == 199 ||
+	//	epoche == 223 ||
+	//	epoche == 235 ||
+	//	epoche == 283)) {
+	//	m = sf::Keyboard::isKeyPressed(sf::Keyboard::P) ? epoche_length : 1;
+	//}
+	//if (min_steps == 1 && (
+	//	epoche <= 12 ||
+	//	epoche == 250 ||
+	//	epoche == 370 ||
+	//	epoche == 389 ||
+	//	epoche == 396 ||
+	//	epoche == 419 ||
+	//	epoche == 427 ||
+	//	epoche == 432 ||
+	//	epoche == 436 ||
+	//	epoche == 451 ||
+	//	epoche == 490 ||
+	//	epoche == 630 ||
+	//	epoche == 640 ||
+	//	epoche == 691 ||
+	//	epoche == 1022 ||
+	//	epoche == 1094 ||
+	//	epoche == 1635 ||
+	//	epoche == 1636 ||
+	//	epoche == 1637 ||
+	//	epoche == 1638 ||
+	//	epoche == 1639 ||
+	//	epoche == 2500 ||
+	//	false)) {
+	//	m = sf::Keyboard::isKeyPressed(sf::Keyboard::P) ? epoche_length : 1;
+	//}
 	for (int n = 0; n < m; n++) {
 		simulation_step();
 		step++;
